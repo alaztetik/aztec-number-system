@@ -1,7 +1,7 @@
 // src/app/page.tsx
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface AztecSymbolDef {
   value: number;
@@ -213,8 +213,8 @@ export default function AztecConverterPage() {
           the /public folder.
         </p>
         <p>
-          The symbol for 8000 uses filename &apos;eight_hundred.png&apos; as per
-          your list.
+          The symbol for 8000 uses filename 'eight_hundred.png' as per your
+          list.
         </p>
       </footer>
     </div>
