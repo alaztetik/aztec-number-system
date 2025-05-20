@@ -1,129 +1,222 @@
+// src/app/page.tsx
 "use client";
 
-import Head from 'next/head';
-import React, { useState } from 'react';
+import { useState, useRef } from "react";
 
+interface AztecSymbolDef {
+  value: number;
+  imageName: string;
+  altText: string;
+}
 
-// Define the Aztec symbols and their values
-const aztecSymbols: { value: number; imageName: string; altText: string }[] = [
-  { value: 8000, imageName: 'image_eight_thousand', altText: '8000' },
-  { value: 400, imageName: 'image_four_hundred', altText: '400' },
-  { value: 100, imageName: 'image_one_hundred', altText: '100' },
-  { value: 20, imageName: 'image_twenty', altText: '20' },
-  { value: 1, imageName: 'image_one', altText: '1' },
+// Define the Aztec symbols and their values, from largest to smallest
+// Based on user's revised list.
+const AZTEC_SYMBOLS_DEFINITIONS: AztecSymbolDef[] = [
+  // NB: User specified 'eight_hundred.png' for 8000. Using as specified.
+  { value: 8000, imageName: "eight_hundred.png", altText: "Aztec 8000 Symbol" },
+  { value: 400, imageName: "four_hundred.png", altText: "Aztec 400 Symbol" },
+  { value: 300, imageName: "three_hundred.png", altText: "Aztec 300 Symbol" },
+  { value: 200, imageName: "two_hundred.png", altText: "Aztec 200 Symbol" },
+  { value: 100, imageName: "hundred.png", altText: "Aztec 100 Symbol" },
+  { value: 20, imageName: "twenty.png", altText: "Aztec 20 Symbol" },
+  { value: 10, imageName: "ten.png", altText: "Aztec 10 Symbol" },
 ];
 
-// Function to convert a single decimal number to an array of Aztec image names
-const decimalToAztecImages = (num: number): string[] => {
-  if (num === 0) return ['0']; // Or handle 0 as you see fit (e.g., empty array or specific text)
-  if (num < 0) return ['(Negative numbers not supported)']; // Aztec system didn't represent negative numbers
-
-  let remaining = num;
-  const images: string[] = [];
-
-  for (const symbol of aztecSymbols) {
-    while (remaining >= symbol.value) {
-      images.push(symbol.imageName);
-      remaining -= symbol.value;
-    }
-  }
-  return images;
+const UNIT_DOT_DEFINITION = {
+  imageName: "one.png", // Image for value 1 (dot)
+  altText: "Aztec 1 Symbol (Dot)",
 };
 
-// Function to process the input text and convert numbers
-const transformTextToAztec = (text: string): (string | React.ReactElement)[] => {
-  const parts = text.split(/(\b\d+\b)/g); // Split by numbers, keeping numbers as separate parts
-  
-  return parts.map((part, index) => {
-    if (/\b\d+\b/.test(part)) { // If the part is a number
-      const num = parseInt(part, 10);
-      const aztecImageNames = decimalToAztecImages(num);
-      
-      if (aztecImageNames.length === 1 && (aztecImageNames[0] === '0' || aztecImageNames[0].startsWith('('))) {
-        // Handle 0 or unsupported cases as text
-        return <span key={`num-${index}`}>{aztecImageNames[0]}</span>;
+// Function to convert a single decimal number to Aztec numeral HTML
+function decimalToAztecHtml(originalNumber: number): string {
+  if (isNaN(originalNumber)) return "";
+  if (originalNumber === 0) return "0";
+  if (originalNumber < 0)
+    return `-${decimalToAztecHtml(Math.abs(originalNumber))}`;
+
+  let currentNum = originalNumber;
+  const htmlChunks: string[] = [];
+
+  const imgStyle =
+    "display: inline-block; height: 1.1em; vertical-align: middle; margin: 0 1px;";
+  const mainSymbolImgStyle =
+    "display: inline-block; height: 1.3em; vertical-align: middle; margin: 0 2px 0 1px;";
+
+  for (const symbol of AZTEC_SYMBOLS_DEFINITIONS) {
+    if (currentNum === 0) break;
+    if (symbol.value > currentNum) continue;
+
+    const count = Math.floor(currentNum / symbol.value);
+    if (count > 0) {
+      // Determine if the original number is an exact match for this single symbol.
+      // e.g., if originalNumber is 20, and current symbol is for 20, count is 1.
+      const isExactOriginalMatch =
+        count === 1 && originalNumber === symbol.value;
+
+      if (isExactOriginalMatch) {
+        // For exact matches (e.g., number 20), just show the symbol without preceding dots.
+      } else {
+        // For components of a larger number (e.g., the '20' part of '57')
+        // or multiple counts (e.g. 2x400), show 'count' multiplier dots.
+        // This aligns with Figure 3 (e.g., "1 x 10" shows a dot then the 10-symbol).
+        for (let i = 0; i < count; i++) {
+          htmlChunks.push(
+            `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText} (multiplier for ${symbol.value})" style="${imgStyle}" />`,
+          );
+        }
       }
 
-      return (
-        <span key={`num-${index}`} className="inline-flex flex-wrap items-center align-bottom mx-1">
-          {aztecImageNames.map((imageName, i) => (
-            <img
-              key={i}
-              src={`/${imageName}.png`} // Assuming .png, adjust if using other formats
-              alt={aztecSymbols.find(s => s.imageName === imageName)?.altText || 'Aztec symbol'}
-              className="h-6 w-auto inline-block mx-0.5" // Adjust styling as needed
-            />
-          ))}
-        </span>
+      // Add the main symbol image
+      htmlChunks.push(
+        `<img src="/${symbol.imageName}" alt="${symbol.altText}" style="${mainSymbolImgStyle}" />`,
+      );
+      currentNum %= symbol.value;
+    }
+  }
+
+  // Add remaining unit dots for values less than the smallest symbol (i.e., <10)
+  if (currentNum > 0) {
+    for (let i = 0; i < currentNum; i++) {
+      htmlChunks.push(
+        `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText}" style="${imgStyle}" />`,
       );
     }
-    return <span key={`text-${index}`}>{part}</span>; // Keep non-number parts as text
-  });
-};
+  }
 
-export default function HomePage() {
-  const [inputText, setInputText] = useState<string>('');
-  const [outputTextElements, setOutputTextElements] = useState<(string | React.ReactElement)[]>([]);
+  return `<span style="white-space: nowrap;">${htmlChunks.join("")}</span>`;
+}
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputText(event.target.value);
+// Function to transform text containing decimal numbers
+function transformTextToAztec(inputText: string): string {
+  const parts = inputText.split(/(\d+)/g);
+  return parts
+    .map((part) => {
+      if (/^\d+$/.test(part)) {
+        const num = parseInt(part, 10);
+        return decimalToAztecHtml(num);
+      }
+      return part;
+    })
+    .join("");
+}
+
+export default function AztecConverterPage() {
+  const initialInputText =
+    "Example: 17257 cacao beans. Also 400, 300, 200, 100, 20, 10, and 7 units.";
+  const [inputText, setInputText] = useState<string>(initialInputText);
+  // Initialize transformedHtml directly using the initial input text
+  const [transformedHtml, setTransformedHtml] = useState<string>(() =>
+    transformTextToAztec(initialInputText),
+  );
+  const outputRef = useRef<HTMLDivElement>(null); // Changed from HTMLParagraphElement for semantic correctness of div
+
+  const handleTransform = () => {
+    const resultHtml = transformTextToAztec(inputText);
+    setTransformedHtml(resultHtml);
   };
 
-  const handleConvertClick = () => {
-    const transformedElements = transformTextToAztec(inputText);
-    setOutputTextElements(transformedElements);
+  // Effect to update transformation if inputText changes, useful for dynamic updates
+  // However, the current setup primarily uses the button. For explicit button click, this useEffect is not strictly needed
+  // but can be kept if you want the output to update as the user types (can be performance intensive for long texts).
+  // For now, transformation is primarily triggered by the button.
+  // If you want it to auto-update on text change:
+  // useEffect(() => {
+  //   handleTransform();
+  // }, [inputText]);
+
+  const handleCopyToClipboard = async () => {
+    if (outputRef.current) {
+      const htmlContent = outputRef.current.innerHTML;
+      try {
+        const blob = new Blob([htmlContent], { type: "text/html" });
+        const clipboardItem = new ClipboardItem({ "text/html": blob });
+        await navigator.clipboard.write([clipboardItem]);
+        alert("Aztec numeral text (HTML) copied to clipboard!");
+      } catch (err) {
+        console.warn(
+          "Failed to copy as HTML, trying as plain text (markup):",
+          err,
+        );
+        try {
+          await navigator.clipboard.writeText(htmlContent);
+          alert("Aztec numeral text (HTML markup) copied to clipboard!");
+        } catch (textErr) {
+          console.error("Failed to copy HTML as text:", textErr);
+          alert(
+            "Failed to copy text. Your browser might not support this feature or permissions are denied.",
+          );
+        }
+      }
+    }
   };
 
   return (
-    <>
-      <Head>
-        <title>Decimal to Aztec Converter</title>
-        <meta name="description" content="Convert decimal numbers in text to Aztec numerals" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl">
-          <h1 className="text-3xl font-bold text-center text-teal-700 mb-6">
-            Decimal to Aztec Number Converter
+    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+      <div className="max-w-3xl w-full bg-white shadow-xl rounded-lg p-6 md:p-8">
+        <header className="mb-6">
+          <h1 className="text-3xl font-bold text-center text-teal-700">
+            Aztec Numeral Converter
           </h1>
+          <p className="text-sm text-gray-600 text-center mt-2">
+            Enter text with decimal numbers to convert them into Aztec numerals.
+          </p>
+        </header>
 
-          <div className="mb-6">
-            <label htmlFor="inputText" className="block text-sm font-medium text-gray-700 mb-1">
-              Enter your text with numbers:
+        <div className="space-y-4">
+          <div>
+            <label
+              htmlFor="inputText"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Input Text:
             </label>
             <textarea
               id="inputText"
               value={inputText}
-              onChange={handleInputChange}
+              onChange={(e) => setInputText(e.target.value)}
               rows={5}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
-              placeholder="For example: The price is 123 and we have 20 items."
+              className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+              placeholder="Enter text here..."
             />
           </div>
 
           <button
-            onClick={handleConvertClick}
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition duration-150 ease-in-out"
+            onClick={handleTransform}
+            className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
           >
-            Convert to Aztec Numerals
+            Transform to Aztec Numerals
           </button>
-
-          {outputTextElements.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800 mb-3">Transformed Text:</h2>
-              <p className="bg-gray-50 p-4 rounded-md text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {outputTextElements.map((element, index) => (
-                  <React.Fragment key={index}>{element}</React.Fragment>
-                ))}
-              </p>
-            </div>
-          )}
         </div>
-        <footer className="text-center text-gray-500 mt-8 text-sm">
-            <p>Aztec numeral images based on standard representations.</p>
-        </footer>
-      </main>
-    </>
+
+        {transformedHtml && (
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">
+              Transformed Text:
+            </h2>
+            <div
+              ref={outputRef}
+              className="p-4 bg-gray-50 border border-gray-200 rounded-md min-h-[60px] text-gray-700 leading-relaxed text-lg" // Increased text size for readability
+              dangerouslySetInnerHTML={{ __html: transformedHtml }}
+            />
+            <button
+              onClick={handleCopyToClipboard}
+              className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+            >
+              Copy Transformed Text
+            </button>
+          </div>
+        )}
+      </div>
+      <footer className="mt-8 text-center text-sm text-gray-500">
+        <p>
+          Ensure image files (e.g., one.png, ten.png, eight_hundred.png) are in
+          the /public folder.
+        </p>
+        <p>
+          The symbol for 8000 uses filename &apos;eight_hundred.png&apos; as per
+          your list.
+        </p>
+      </footer>
+    </div>
   );
 }
