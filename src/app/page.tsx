@@ -208,16 +208,6 @@ export default function AztecConverterPage() {
           </div>
         )}
       </div>
-      <footer className="mt-8 text-center text-sm text-gray-500">
-        <p>
-          Ensure image files (e.g., one.png, ten.png, eight_hundred.png) are in
-          the /public folder.
-        </p>
-        <p>
-          The symbol for 8000 uses filename &apos;eight_hundred.png&apos; as per
-          your list.
-        </p>
-      </footer>
     </div>
   );
 }
