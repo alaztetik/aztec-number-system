@@ -194,7 +194,9 @@ export default function AztecConverterPage() {
             <button
               onClick={() => {
                 const range = document.createRange();
-                outputRef.current && range.selectNodeContents(outputRef.current);
+                if (outputRef.current) {
+                  range.selectNodeContents(outputRef.current);
+                }
                 const selection = window.getSelection();
                 selection?.removeAllRanges();
                 selection?.addRange(range);
