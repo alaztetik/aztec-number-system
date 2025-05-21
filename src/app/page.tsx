@@ -27,7 +27,6 @@ const UNIT_DOT_DEFINITION = {
   altText: "Aztec 1 Symbol (Dot)",
 };
 
-// Function to convert a single decimal number to Aztec numeral HTML
 function decimalToAztecHtml(originalNumber: number): string {
   if (isNaN(originalNumber)) return "";
   if (originalNumber === 0) return "0";
@@ -61,14 +60,14 @@ function decimalToAztecHtml(originalNumber: number): string {
         // This aligns with Figure 3 (e.g., "1 x 10" shows a dot then the 10-symbol).
         for (let i = 0; i < count; i++) {
           htmlChunks.push(
-            `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText} (multiplier for ${symbol.value})" style="${imgStyle}" />`,
+            `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText} (multiplier for ${symbol.value})" style="${imgStyle}" />`
           );
         }
       }
 
       // Add the main symbol image
       htmlChunks.push(
-        `<img src="/${symbol.imageName}" alt="${symbol.altText}" style="${mainSymbolImgStyle}" />`,
+        `<img src="/${symbol.imageName}" alt="${symbol.altText}" style="${mainSymbolImgStyle}" />`
       );
       currentNum %= symbol.value;
     }
@@ -78,7 +77,7 @@ function decimalToAztecHtml(originalNumber: number): string {
   if (currentNum > 0) {
     for (let i = 0; i < currentNum; i++) {
       htmlChunks.push(
-        `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText}" style="${imgStyle}" />`,
+        `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText}" style="${imgStyle}" />`
       );
     }
   }
@@ -86,7 +85,6 @@ function decimalToAztecHtml(originalNumber: number): string {
   return `<span style="white-space: nowrap;">${htmlChunks.join("")}</span>`;
 }
 
-// Function to transform text containing decimal numbers
 function transformTextToAztec(inputText: string): string {
   const parts = inputText.split(/(\d+)/g);
   return parts
@@ -106,7 +104,7 @@ export default function AztecConverterPage() {
   const [inputText, setInputText] = useState<string>(initialInputText);
   // Initialize transformedHtml directly using the initial input text
   const [transformedHtml, setTransformedHtml] = useState<string>(() =>
-    transformTextToAztec(initialInputText),
+    transformTextToAztec(initialInputText)
   );
   const outputRef = useRef<HTMLDivElement>(null); // Changed from HTMLParagraphElement for semantic correctness of div
 
@@ -115,40 +113,50 @@ export default function AztecConverterPage() {
     setTransformedHtml(resultHtml);
   };
 
-  // Effect to update transformation if inputText changes, useful for dynamic updates
-  // However, the current setup primarily uses the button. For explicit button click, this useEffect is not strictly needed
-  // but can be kept if you want the output to update as the user types (can be performance intensive for long texts).
-  // For now, transformation is primarily triggered by the button.
-  // If you want it to auto-update on text change:
-  // useEffect(() => {
-  //   handleTransform();
-  // }, [inputText]);
-
   const handleCopyToClipboard = async () => {
-    if (outputRef.current) {
-      const htmlContent = outputRef.current.innerHTML;
-      try {
-        const blob = new Blob([htmlContent], { type: "text/html" });
-        const clipboardItem = new ClipboardItem({ "text/html": blob });
-        await navigator.clipboard.write([clipboardItem]);
-        alert("Aztec numeral text (HTML) copied to clipboard!");
-      } catch (err) {
-        console.warn(
-          "Failed to copy as HTML, trying as plain text (markup):",
-          err,
-        );
-        try {
-          await navigator.clipboard.writeText(htmlContent);
-          alert("Aztec numeral text (HTML markup) copied to clipboard!");
-        } catch (textErr) {
-          console.error("Failed to copy HTML as text:", textErr);
-          alert(
-            "Failed to copy text. Your browser might not support this feature or permissions are denied.",
-          );
-        }
+    try {
+      const element = document.getElementById("text-to-copy");
+      if (!element) {
+        console.error("Element not found");
+        return;
       }
+      const textToCopy = element.innerText;
+      await navigator.clipboard.writeText(textToCopy);
+      console.log("Copied to clipboard!");
+    } catch (err) {
+      console.error("Failed to copy: ", err);
     }
   };
+
+  if (outputRef.current) {
+    const htmlContent = outputRef.current.innerHTML;
+    try {
+      const blob = new Blob([htmlContent], { type: "text/html" });
+      const clipboardItem = new ClipboardItem({ "text/html": blob });
+
+      try {
+        navigator.clipboard.write([clipboardItem]).catch((err) => {
+          console.error("Failed to write to clipboard:", err);
+        });
+      } catch (err) {
+        console.error("Failed to write to clipboard:", err);
+      }
+      console.log("Aztec numeral text (HTML) copied to clipboard!");
+    } catch (err) {
+      console.warn(
+        "Failed to copy as HTML, trying as plain text (markup):",
+        err
+      );
+      try {
+        navigator.clipboard.writeText(htmlContent).catch((err) => {
+          console.error("Failed to copy HTML as text:", err);
+        });
+        console.log("Aztec numeral text (HTML markup) copied to clipboard!");
+      } catch (textErr) {
+        console.error("Failed to copy HTML as text:", textErr);
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
@@ -199,10 +207,16 @@ export default function AztecConverterPage() {
               dangerouslySetInnerHTML={{ __html: transformedHtml }}
             />
             <button
-              onClick={handleCopyToClipboard}
-              className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+              onClick={() => {
+                const range = document.createRange();
+                outputRef.current && range.selectNodeContents(outputRef.current);
+                const selection = window.getSelection();
+                selection?.removeAllRanges();
+                selection?.addRange(range);
+              }}
+              className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
             >
-              Copy Transformed Text
+              Select All Transformed Text
             </button>
           </div>
         )}
