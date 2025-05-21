@@ -113,21 +113,6 @@ export default function AztecConverterPage() {
     setTransformedHtml(resultHtml);
   };
 
-  const handleCopyToClipboard = async () => {
-    try {
-      const element = document.getElementById("text-to-copy");
-      if (!element) {
-        console.error("Element not found");
-        return;
-      }
-      const textToCopy = element.innerText;
-      await navigator.clipboard.writeText(textToCopy);
-      console.log("Copied to clipboard!");
-    } catch (err) {
-      console.error("Failed to copy: ", err);
-    }
-  };
-
   if (outputRef.current) {
     const htmlContent = outputRef.current.innerHTML;
     try {
