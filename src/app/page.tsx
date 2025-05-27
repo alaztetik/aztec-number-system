@@ -53,7 +53,10 @@ function decimalToAztecHtml(originalNumber: number): string {
   const htmlChunks: string[] = [];
 
   const imgStyle =
-    "display: inline-block; height: 1.1em; vertical-align: middle; margin: 0 1px;";
+    "height: 1.1em; vertical-align: bottom; margin: 0 1px;";
+  const imgContainerStyle =
+    "display: inline-flex; flex-direction: column; align-items: center; vertical-align: bottom;";
+
   const mainSymbolImgStyle =
     "display: inline-block; height: 1.3em; vertical-align: middle; margin: 0 2px 0 1px;";
 
@@ -74,11 +77,12 @@ function decimalToAztecHtml(originalNumber: number): string {
         // For components of a larger number (e.g., the '20' part of '57')
         // or multiple counts (e.g. 2x400), show 'count' multiplier dots.
         // This aligns with Figure 3 (e.g., "1 x 10" shows a dot then the 10-symbol).
-        for (let i = 0; i < count; i++) {
-          htmlChunks.push(
-            `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText} (multiplier for ${symbol.value})" style="${imgStyle}" />`,
-          );
-        }
+        const dotGroup = Array(count)
+          .fill(`<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText} (multiplier for ${symbol.value})" style="${imgStyle}" />`)
+          .join("");
+        htmlChunks.push(
+          `<span style="${imgContainerStyle}">${dotGroup}</span>`
+        );
       }
 
       // Add the main symbol image
@@ -91,11 +95,12 @@ function decimalToAztecHtml(originalNumber: number): string {
 
   // Add remaining unit dots for values less than the smallest symbol (i.e., <10)
   if (currentNum > 0) {
-    for (let i = 0; i < currentNum; i++) {
-      htmlChunks.push(
-        `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText}" style="${imgStyle}" />`,
-      );
-    }
+    const dotGroup = Array(currentNum)
+      .fill(`<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText}" style="${imgStyle}" />`)
+      .join("");
+    htmlChunks.push(
+      `<span style="${imgContainerStyle}">${dotGroup}</span>`
+    );
   }
 
   return `<span style="white-space: nowrap;">${htmlChunks.join("")}</span>`;
