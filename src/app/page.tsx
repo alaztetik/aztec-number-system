@@ -13,17 +13,33 @@ interface AztecSymbolDef {
 // Based on user's revised list.
 const AZTEC_SYMBOLS_DEFINITIONS: AztecSymbolDef[] = [
   // NB: User specified 'eight_hundred.png' for 8000. Using as specified.
-  { value: 8000, imageName: "eight_hundred.png", altText: "Aztec 8000 Symbol" },
-  { value: 400, imageName: "four_hundred.png", altText: "Aztec 400 Symbol" },
-  { value: 300, imageName: "three_hundred.png", altText: "Aztec 300 Symbol" },
-  { value: 200, imageName: "two_hundred.png", altText: "Aztec 200 Symbol" },
-  { value: 100, imageName: "hundred.png", altText: "Aztec 100 Symbol" },
-  { value: 20, imageName: "twenty.png", altText: "Aztec 20 Symbol" },
-  { value: 10, imageName: "ten.png", altText: "Aztec 10 Symbol" },
+  {
+    value: 8000,
+    imageName: "eight_hundred_small.png",
+    altText: "Aztec 8000 Symbol",
+  },
+  {
+    value: 400,
+    imageName: "four_hundred_small.png",
+    altText: "Aztec 400 Symbol",
+  },
+  {
+    value: 300,
+    imageName: "three_hundred_small.png",
+    altText: "Aztec 300 Symbol",
+  },
+  {
+    value: 200,
+    imageName: "two_hundred_small.png",
+    altText: "Aztec 200 Symbol",
+  },
+  { value: 100, imageName: "hundred_small.png", altText: "Aztec 100 Symbol" },
+  { value: 20, imageName: "twenty_small.png", altText: "Aztec 20 Symbol" },
+  { value: 10, imageName: "ten_small.png", altText: "Aztec 10 Symbol" },
 ];
 
 const UNIT_DOT_DEFINITION = {
-  imageName: "one.png", // Image for value 1 (dot)
+  imageName: "one_small.png", // Image for value 1 (dot)
   altText: "Aztec 1 Symbol (Dot)",
 };
 
@@ -60,14 +76,14 @@ function decimalToAztecHtml(originalNumber: number): string {
         // This aligns with Figure 3 (e.g., "1 x 10" shows a dot then the 10-symbol).
         for (let i = 0; i < count; i++) {
           htmlChunks.push(
-            `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText} (multiplier for ${symbol.value})" style="${imgStyle}" />`
+            `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText} (multiplier for ${symbol.value})" style="${imgStyle}" />`,
           );
         }
       }
 
       // Add the main symbol image
       htmlChunks.push(
-        `<img src="/${symbol.imageName}" alt="${symbol.altText}" style="${mainSymbolImgStyle}" />`
+        `<img src="/${symbol.imageName}" alt="${symbol.altText}" style="${mainSymbolImgStyle}" />`,
       );
       currentNum %= symbol.value;
     }
@@ -77,7 +93,7 @@ function decimalToAztecHtml(originalNumber: number): string {
   if (currentNum > 0) {
     for (let i = 0; i < currentNum; i++) {
       htmlChunks.push(
-        `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText}" style="${imgStyle}" />`
+        `<img src="/${UNIT_DOT_DEFINITION.imageName}" alt="${UNIT_DOT_DEFINITION.altText}" style="${imgStyle}" />`,
       );
     }
   }
@@ -104,7 +120,7 @@ export default function AztecConverterPage() {
   const [inputText, setInputText] = useState<string>(initialInputText);
   // Initialize transformedHtml directly using the initial input text
   const [transformedHtml, setTransformedHtml] = useState<string>(() =>
-    transformTextToAztec(initialInputText)
+    transformTextToAztec(initialInputText),
   );
   const outputRef = useRef<HTMLDivElement>(null); // Changed from HTMLParagraphElement for semantic correctness of div
 
@@ -130,7 +146,7 @@ export default function AztecConverterPage() {
     } catch (err) {
       console.warn(
         "Failed to copy as HTML, trying as plain text (markup):",
-        err
+        err,
       );
       try {
         navigator.clipboard.writeText(htmlContent).catch((err) => {
